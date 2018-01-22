@@ -1,0 +1,227 @@
+{% extends '::baseAdmin.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style type="text/css">
+        .input-not-valid {
+            border: 1px solid red !important;
+        }
+        .ui-autocomplete.ui-front.ui-menu.ui-widget.ui-widget-content{
+            height: auto !important;
+            max-height: 400px;
+        }
+        .ui-widget-content {
+            height: 350px !important;
+            overflow-x: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+
+    {# S'il y a une erreur, on l'affiche dans un joli cadre #}
+    {% if error is defined and error != null %}
+        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+    {% endif %}
+
+    <div class="col-md-offset-4 col-md-4">
+
+
+        <p class="login-box-msg">Se connecter</p>
+        <form action="{{ path('fos_user_security_check') }}" method="post" id="login-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" />
+            <div class="form-group has-feedback">
+                <input type="text" class="form-control" placeholder="Nom d'utilisateur" name="_username" value="" id="username" required="required"/>
+                <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+            </div>
+            <div class="form-group has-feedback">
+                <input type="password" class="form-control" placeholder="Mot de passe" name="_password" id="password" required="required"/>
+                <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="hidden" name="_failure_path" value="{{ url('login_front') }}"/>
+                    <button type="submit" class="btn btn-primary btn-block btn-flat" id="login-form-submit">Connecter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-offset-4 col-md-4 spacer">
+
+        <p class="login-box-msg">Créer un compte</p>
+        <form method="post" id="foUserForm" enctype="multipart/form-data" data-attr="g-recaptcha-response">
+
+            <div class="callout callout-success" style="display: none;"></div>
+            <div class="callout callout-danger" style="display: none;"></div>
+            <div id="messError"></div>
+
+            <div class="form-group"><label for="fos_user_registration_form_email" class="required">Email</label>
+                <input type="email" id="fos_user_registration_form_email" name="fos_user_registration_form[email]" required="required" class="form-control" value="">
+            </div>
+
+            <div class="form-group">
+                <label for="fos_user_registration_form_username" class="required">Username</label>
+                <input type="text" id="fos_user_registration_form_username" name="fos_user_registration_form[username]" required="required" maxlength="180" pattern=".{2,}" class="form-control" value="">
+            </div>
+
+            <div class="form-group">
+                <label for="fos_user_registration_form_plainPassword_first" class="required">Password</label>
+                <input type="password" id="fos_user_registration_form_plainPassword_first" name="fos_user_registration_form[plainPassword][first]" required="required" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="fos_user_registration_form_plainPassword_second" class="required">Repeat password</label>
+                <input type="password" id="fos_user_registration_form_plainPassword_second" name="fos_user_registration_form[plainPassword][second]" required="required" class="form-control">
+            </div>
+
+
+            <div class="box-footer">
+                <input type="button" id="submitUserForm" class="btn btn-primary" value="Créer mon compte"/>
+            </div>
+
+        </form>
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        $(function () {
+
+            // submit form.
+            //$('#foUserForm').submit(function (event) {
+            $('#submitUserForm').click(function (event) {
+
+                iNbError = validateForm('foUserForm');
+
+                if (iNbError === 0) {
+                    form = $('#foUserForm')[0];
+                    zData = new FormData(form);
+                    bootbox.dialog({message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Traitement en cours...</div>'});
+                    $.ajax({
+                        type: "POST",
+                        enctype: 'multipart/form-data',
+                        url: "{{ path('fo_users_new') }}",
+                        data: zData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        timeout: 60000,
+                        dataType: 'json',
+                        success: function (response) {
+                            $('#foUserForm .callout.callout-success').hide();
+                            $('#foUserForm .callout.callout-danger').hide();
+
+                            if (response.status === 200) {
+                                bootbox.alert(response.message, function () {
+                                    bootbox.hideAll();
+                                    window.location.href = '{{ path('login_front') }}';
+                                });
+                            }
+
+                            if (response.status === 400) {
+                                $('#foUserForm .callout.callout-danger').show();
+                                $('#foUserForm .callout.callout-danger').html('');
+                                $('#foUserForm .callout.callout-danger').html(response.message);
+                                bootbox.hideAll();
+                            }
+                        }
+                    });
+                }
+                else {
+                    if (!$('#foUserForm')[0].checkValidity()) {
+                        event.preventDefault();
+                    }
+                }
+            });
+
+
+            function validateForm(_zFormId) {
+                tzElements = new Array();
+                $('#' + _zFormId + ' input[type="text"], #' + _zFormId + ' input[type="email"], #' + _zFormId + ' input[type="number"], ' +
+                        '#' + _zFormId + ' textarea, #' + _zFormId + ' select, #' + _zFormId + ' input[type="checkbox"]').each(function () {
+                    elementRequired = $(this).attr('required');
+
+                    if (('required' === elementRequired || undefined !== elementRequired)) {
+
+                        zId = $(this).attr('id');
+                        tzElements.push('#' + _zFormId + ' #' + zId);
+                    }
+                });
+
+                iNbError = validateFormStep(tzElements);
+                if (iNbError > 0) {
+                    $('#' + _zFormId + ' #messError').html('<span style="color:red ;">Le formulaire ne semble pas correctement rempli. Les erreurs ont été mises en surbrillance plus bas.</span>');
+                } else {
+                    $('#' + _zFormId + ' #messError').html('');
+
+                }
+
+                return iNbError;
+            }
+
+            function validateFormStep(_tzElementListes) {
+
+                iNumNomValid = 0;
+                iElementNombre = _tzElementListes.length;
+                for (index = 0; index <= iElementNombre - 1; index++) {
+                    zElement = _tzElementListes[index];
+                    zValue = $(zElement).val();
+                    zDataAttr = $(zElement).attr('data-attr');
+
+                    if (zValue === '') {
+                        iNumNomValid = iNumNomValid + 1;
+                        $(zElement).addClass('input-not-valid');
+                    } else {
+                        $(zElement).removeClass('input-not-valid');
+                    }
+
+                    zType = $(zElement).attr('type');
+
+                    if (zType === 'checkbox') {
+                        if ($(zElement).prop('checked')) {
+                            $(zElement).removeClass('input-not-valid');
+                        }
+                        else {
+
+                            iNumNomValid = iNumNomValid + 1;
+                            $(zElement).addClass('input-not-valid');
+                        }
+                    }
+
+                    //Validation Mail
+                    if (iNumNomValid === 0) {
+
+                        if (zType === 'email') {
+
+                            zEmail = $(zElement).val();
+
+                            if (zEmail !== '' && !validateEmail(zEmail)) {
+
+                                iNumNomValid = iNumNomValid + 1;
+                                $(zElement).addClass('input-not-valid');
+                            } else {
+                                $(zElement).removeClass('input-not-valid');
+                            }
+                        }
+
+
+                    }
+
+                }
+
+                return iNumNomValid;
+            }
+
+            // validate email
+            function validateEmail(email) {
+
+                var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+                return emailReg.test(email);
+            }
+        });
+    </script>
+{% endblock %}
+

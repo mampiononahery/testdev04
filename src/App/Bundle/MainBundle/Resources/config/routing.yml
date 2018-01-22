@@ -1,0 +1,35 @@
+app_main_homepage:
+    path:     /
+    defaults: { _controller: AppMainBundle:Annonces:index }
+
+app_annonce_new:
+    path:     /annonce/new
+    defaults: { _controller: AppMainBundle:Annonces:new }
+    methods: [GET, POST]
+
+app_annonce_edit:
+    path:     /annonce/{id}/edit
+    defaults: { _controller: AppMainBundle:Annonces:edit }
+    methods: [GET, POST]
+
+
+# new fo user.
+fo_users_new:
+    path:     /front/new
+    defaults: { _controller: AppMainBundle:FoUsers:new }
+    methods:  [GET, POST]
+
+
+# Ajax retrieve list all user FO in BO.
+jolydays_dev4_retrieveCategoriesAjax:
+    path:     /announces/get?r={query}
+    defaults: { _controller: AppMainBundle:Annonces:retrieveDataAjax, query: null }
+    methods: [GET]
+    options:
+        expose: true
+
+
+app_categorie_new:
+    path:     /categorie/new
+    defaults: { _controller: AppMainBundle:Categories:new }
+    methods: [GET, POST]

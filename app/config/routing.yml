@@ -1,0 +1,28 @@
+app_main:
+    resource: "@AppMainBundle/Resources/config/routing.yml"
+    prefix:   /
+    schemes: https
+
+app:
+    resource: '@AppBundle/Controller/'
+    type: annotation
+    schemes: https
+
+fos_user:
+    resource: "@FOSUserBundle/Resources/config/routing/all.xml"
+    schemes: https
+
+# Login front-office
+login_front:
+    path: /auth
+    defaults: { _controller: AppMainBundle:Security:login }
+    methods: [GET]
+    schemes: https
+
+fos_js_routing:
+    resource: "@FOSJsRoutingBundle/Resources/config/routing/routing.xml"
+    schemes: https
+
+_liip_imagine:
+    resource: "@LiipImagineBundle/Resources/config/routing.xml"
+    schemes: https

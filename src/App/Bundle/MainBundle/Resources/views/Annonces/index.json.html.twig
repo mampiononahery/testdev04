@@ -1,0 +1,26 @@
+{% spaceless %}
+    {% set aaData = {} %}
+
+    {% for annonce in values %}
+        {% set dataImg = assets_img ~ annonce.picture %}
+        {% set img = annonce.picture != null ?
+        '<img src="'~ dataImg | imagine_filter("announce_avatar")~'" height="65" width="65" class="img-circle">' : ''  %}
+
+        {%
+        set value = [
+            annonce.id,
+            annonce.title,
+            annonce.description,
+            annonce.price,
+            img,
+            ' <a href="'~path('app_annonce_edit', {'id': annonce.id})~'">Editer</a>'
+        ]
+        %}
+        
+        {% set aaData = aaData|merge({ (loop.index0): value }) %}
+    {% endfor %}
+{% endspaceless %}
+{% set data = data|merge({ 'aaData': aaData} ) %}
+{{ data|json_encode|raw }}
+
+
